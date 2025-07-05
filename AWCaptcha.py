@@ -12,6 +12,7 @@ import uvicorn
 # FastAPI App
 app = FastAPI()
 
+# Allow all origins (You can restrict this to your frontend domain)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,11 +21,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure Gemini API
-GEMINI_API_KEY = "AIzaSyBOxvqR31egf1IhP2CRRUn8R2dzTkyawCo"  # DO NOT SHARE THIS
+# Gemini Config
+GEMINI_API_KEY = "AIzaSyBOxvqR31egf1IhP2CRRUn8R2dzTkyawCo"
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
+# Dynamically update API key
+@app.post("/api/update-key")
+def update_api_key(new_key: str = Form(...)):
+    global model
+    try:
+        genai.configure(api_key=new_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        return {"message": "API key updated successfully"}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+# Image Enhancement Logic
 def upscale_and_enhance_image_from_bytes(image_bytes, scale_factor=2):
     np_img = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
@@ -48,6 +61,7 @@ def upscale_and_enhance_image_from_bytes(image_bytes, scale_factor=2):
 
     return Image.fromarray(smoothed_img)
 
+# Gemini OCR
 def get_text_from_image(image: Image.Image, prompt: str = "Read the text from this image in uppercase") -> str:
     image = image.convert("RGB").resize((640, 480))
     buf = io.BytesIO()
@@ -57,6 +71,7 @@ def get_text_from_image(image: Image.Image, prompt: str = "Read the text from th
     response = model.generate_content([prompt, Image.open(buf)])
     return response.text.strip().upper()
 
+# Main OCR Endpoint
 @app.post("/api/extract-text")
 async def extract_text(image: UploadFile = File(...)):
     try:
@@ -67,5 +82,6 @@ async def extract_text(image: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+# Run server
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
