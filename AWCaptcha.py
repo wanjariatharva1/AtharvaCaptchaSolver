@@ -1,4 +1,3 @@
-# Image Upscaling + Gemini OCR API (FastAPI)
 import cv2
 from PIL import Image, ImageEnhance
 import numpy as np
@@ -20,8 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure Gemini API
-GEMINI_API_KEY = "AIzaSyBOxvqR31egf1IhP2CRRUn8R2dzTkyawCo" 
+GEMINI_API_KEY = "AIzaSyBE1k-K8X9RSHjZY0d8yGf9eKjrB7AaneQ" 
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
