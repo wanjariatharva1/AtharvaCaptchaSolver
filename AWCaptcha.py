@@ -46,7 +46,25 @@ def upscale_and_enhance_image_from_bytes(image_bytes, scale_factor=2):
 
     return Image.fromarray(smoothed_img)
 
-def get_text_from_image(image: Image.Image, prompt: str = "You are an expert at reading and extracting text from complex, distorted images. The image I am providing is a CAPTCHA-style image that meets the following criteria:It contains exactly 6 characters, a combination of capital letters (A–Z) and numbers (0–9) only. The text is colored red on a white background. There are multiple red distortion lines over the image, which may intersect or obscure parts of the characters. Characters may be slightly rotated, warped, unevenly spaced, or overlapping. Two or more characters may visually collide or overlap, and some may be shifted vertically (appearing higher or lower). The characters are not cleanly segmented, but are still recognizable by a human reading left to right. Your task:Ignore background noise and distortion lines. Extract only the actual alphanumeric characters, in correct left-to-right order, as a human would perceive them. Always return exactly 6 characters.If any character is completely unreadable, return a [?] in its place (do not guess).Do not include spaces, special characters, or any additional explanation—return only the final string.Treat visually overlapping characters carefully, recognizing both wherever possible.") -> str:
+def get_text_from_image(image: Image.Image, prompt: str = """
+You are an expert at reading and extracting text from complex, distorted images. The image I am providing is a CAPTCHA-style image that meets the following criteria:
+- It contains exactly 6 characters: capital letters (A–Z) and numbers (0–9) only.
+- The text is colored red on a white background.
+- There are multiple red distortion lines across the image.
+- Characters may be slightly rotated, warped, unevenly spaced, or overlapping.
+- Characters may be vertically shifted and not cleanly segmented.
+- Two or more characters may visually collide.
+
+Your task:
+- Go from **left to right**, extracting **one character at a time**.
+- Start with the leftmost visible character. Slightly move right to find the next, and so on.
+- Do **not** try to interpret all characters in one go.
+- Use a **first-come, first-serve** approach—prioritize characters that appear earlier in sequence, even if others seem clearer.
+- Ignore background noise and distortion lines.
+- Return only the **6 alphanumeric characters**, in correct order.
+- If a character is completely unreadable, return a `[?]` in its place.
+- Do not include any spaces, special characters, or explanations—return only the final string.
+""") -> str:
     image = image.convert("RGB").resize((640, 480))
     buf = io.BytesIO()
     image.save(buf, format="JPEG")
